@@ -17,6 +17,7 @@ function App() {
     () => (auth.token ? { Authorization: `Bearer ${auth.token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }),
     [auth.token]
   );
+  const isAdmin = auth.user?.role === "ADMIN";
 
   async function callApi(path, options = {}) {
     const response = await fetch(`${API_BASE}${path}`, options);
@@ -53,6 +54,10 @@ function App() {
 
   const submitTask = async (event) => {
     event.preventDefault();
+    if (!isAdmin) {
+      setMessage("Only ADMIN can create or edit tasks.");
+      return;
+    }
     setMessage("");
     const path = editingTaskId ? `/tasks/${editingTaskId}` : "/tasks";
     const method = editingTaskId ? "PATCH" : "POST";
@@ -68,11 +73,16 @@ function App() {
   };
 
   const startEdit = (task) => {
+    if (!isAdmin) return;
     setTaskForm({ title: task.title, description: task.description || "" });
     setEditingTaskId(task.id);
   };
 
   const toggleStatus = async (task) => {
+    if (!isAdmin) {
+      setMessage("Only ADMIN can update tasks.");
+      return;
+    }
     await callApi(`/tasks/${task.id}`, {
       method: "PATCH",
       headers: authHeaders,
@@ -82,6 +92,10 @@ function App() {
   };
 
   const deleteTask = async (taskId) => {
+    if (!isAdmin) {
+      setMessage("Only ADMIN can delete tasks.");
+      return;
+    }
     await callApi(`/tasks/${taskId}`, { method: "DELETE", headers: authHeaders }).catch((err) => setMessage(err.message));
     fetchTasks();
   };
@@ -123,12 +137,19 @@ function App() {
         </div>
       </header>
 
-      <form onSubmit={submitTask} className="card">
-        <h3>{editingTaskId ? "Edit Task" : "Create Task"}</h3>
-        <input placeholder="Title" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} required />
-        <textarea placeholder="Description (optional)" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
-        <button type="submit">{editingTaskId ? "Update Task" : "Add Task"}</button>
-      </form>
+      {isAdmin ? (
+        <form onSubmit={submitTask} className="card">
+          <h3>{editingTaskId ? "Edit Task" : "Create Task"}</h3>
+          <input placeholder="Title" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} required />
+          <textarea placeholder="Description (optional)" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
+          <button type="submit">{editingTaskId ? "Update Task" : "Add Task"}</button>
+        </form>
+      ) : (
+        <section className="card">
+          <h3>Read-only Mode</h3>
+          <p>You are logged in as USER. You can only view tasks.</p>
+        </section>
+      )}
 
       <section className="card">
         <h3>Tasks</h3>
@@ -140,11 +161,13 @@ function App() {
               <p>{task.description || "No description"}</p>
               <small>Owner: {task.userId}</small>
             </div>
-            <div className="taskActions">
-              <button onClick={() => toggleStatus(task)}>{task.completed ? "Mark Pending" : "Mark Done"}</button>
-              <button onClick={() => startEdit(task)}>Edit</button>
-              <button onClick={() => deleteTask(task.id)}>Delete</button>
-            </div>
+            {isAdmin ? (
+              <div className="taskActions">
+                <button onClick={() => toggleStatus(task)}>{task.completed ? "Mark Pending" : "Mark Done"}</button>
+                <button onClick={() => startEdit(task)}>Edit</button>
+                <button onClick={() => deleteTask(task.id)}>Delete</button>
+              </div>
+            ) : null}
           </article>
         ))}
       </section>

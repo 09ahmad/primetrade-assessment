@@ -3,7 +3,7 @@
 Minimal Bun + Express API implementing:
 - JWT auth (`register`, `login`)
 - Role-based access (`ADMIN`, `USER`)
-- Task CRUD with ownership rules
+- Task CRUD with strict role permissions
 - API versioning under `/api/v1`
 - Swagger docs at `/api/v1/docs`
 
@@ -32,8 +32,18 @@ Default admin:
 - `POST /api/v1/tasks`
 - `GET /api/v1/tasks`
 - `GET /api/v1/tasks/:id`
-- `PATCH /api/v1/tasks/:id`
-- `DELETE /api/v1/tasks/:id`
+- `PATCH /api/v1/tasks/:id` (admin only)
+- `DELETE /api/v1/tasks/:id` (admin only)
+
+## Role Permissions
+
+| Endpoint/Action | ADMIN | USER |
+|---|---|---|
+| `GET /api/v1/tasks` | ✅ | ✅ |
+| `GET /api/v1/tasks/:id` | ✅ | ✅ |
+| `POST /api/v1/tasks` | ✅ | ❌ (`403`) |
+| `PATCH /api/v1/tasks/:id` | ✅ | ❌ (`403`) |
+| `DELETE /api/v1/tasks/:id` | ✅ | ❌ (`403`) |
 
 ## Tests
 

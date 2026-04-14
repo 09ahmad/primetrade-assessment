@@ -19,6 +19,26 @@ Default seeded admin:
 - Email: `admin@tradeai.com`
 - Password: `Admin1234`
 
-## Scalability note
+## Role-based behavior (important for evaluation)
 
-The backend is modular by domain (`routes`, `services`, `validators`) and versioned (`/api/v1`), making it straightforward to split modules into separate services later. For scale-out, the first upgrades should be Redis-backed rate limiting / caching and horizontal API replicas behind a load balancer.
+The application now has a clear role split visible in both backend and frontend.
+
+| Capability | ADMIN | USER |
+|---|---|---|
+| Register/Login | ✅ | ✅ |
+| View all tasks (`GET /tasks`, `GET /tasks/:id`) | ✅ | ✅ |
+| Create task (`POST /tasks`) | ✅ | ❌ |
+| Edit task (`PATCH /tasks/:id`) | ✅ | ❌ |
+| Delete task (`DELETE /tasks/:id`) | ✅ | ❌ |
+| UI Task Form (create/edit) | ✅ visible | ❌ hidden |
+| UI Task Action Buttons (edit/toggle/delete) | ✅ visible | ❌ hidden |
+
+### How examiner can verify quickly
+
+1. Login as admin (`admin@tradeai.com` / `Admin1234`) and create/update/delete tasks from UI.
+2. Register a new normal user from the same UI.
+3. Login as that user:
+   - User can see task list.
+   - User cannot see create/edit/delete controls.
+   - If attempted via API client, backend returns `403` on create/update/delete task routes.
+

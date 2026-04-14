@@ -33,7 +33,7 @@ describe("Tasks — POST /api/v1/tasks", () => {
     expect(res.body.data.title).toBe("Write docs");
   });
 
-  it("should create a task as USER", async () => {
+  it("should return 403 when USER tries to create task", async () => {
     const token = await getToken("USER");
 
     const res = await api
@@ -43,8 +43,7 @@ describe("Tasks — POST /api/v1/tasks", () => {
         title: "User task",
       });
 
-    expect(res.status).toBe(201);
-    expect(res.body.data.userId).toBe(TEST_USERS.user.id);
+    expect(res.status).toBe(403);
   });
 
   it("should return 400 for missing title", async () => {
@@ -64,16 +63,14 @@ describe("Tasks — POST /api/v1/tasks", () => {
 });
 
 describe("Tasks — GET /api/v1/tasks", () => {
-  it("should return only own tasks for USER", async () => {
+  it("should allow USER to read tasks (read-only role)", async () => {
     const token = await getToken("USER");
     const res = await api.get("/api/v1/tasks").set(authHeader(token));
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
-    res.body.data.forEach((task: any) => {
-      expect(task.userId).toBe(TEST_USERS.user.id);
-    });
+    expect(res.body.data.length).toBeGreaterThan(0);
   });
 
   it("should return all tasks for ADMIN", async () => {
@@ -96,13 +93,13 @@ describe("Tasks — GET /api/v1/tasks/:id", () => {
     expect(res.body.data.id).toBe(createdTaskId);
   });
 
-  it("should return 403 if USER tries to access admin task", async () => {
+  it("should allow USER to view task by id", async () => {
     const token = await getToken("USER");
     const res = await api
       .get(`/api/v1/tasks/${createdTaskId}`)
       .set(authHeader(token));
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("should return 404 for unknown task", async () => {
